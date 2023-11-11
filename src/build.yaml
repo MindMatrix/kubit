@@ -1,0 +1,72 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build
+  namespace: default
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 60
+  activeDeadlineSeconds: 600 # 10 minutes
+  template:
+    spec:
+      imagePullSecrets:
+        - name: docker-hub
+      restartPolicy: Never
+      shareProcessNamespace: true
+      containers:
+        - name: build
+          image: mindmatrix/dotnet8-sdk:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              mkdir -p ~/.ssh &&
+              cp /tmp/ssh/id_rsa ~/.ssh/id_rsa &&
+              chmod 600 ~/.ssh/id_rsa &&
+              ssh-keyscan git-server-service > ~/.ssh/known_hosts &&
+              sleep infinity
+          volumeMounts:
+            - mountPath: /mnt/data
+              name: git-repo-volume
+            - mountPath: /var/run
+              name: docker-socket-volume
+            - name: ssh-keys-volume
+              mountPath: "/tmp/ssh"
+              readOnly: true
+          env:
+            - name: DOCKER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: dockerhub-credentials
+                  key: DOCKER_USERNAME
+            - name: DOCKER_PAT
+              valueFrom:
+                secretKeyRef:
+                  name: dockerhub-credentials
+                  key: DOCKER_PAT
+            - name: NUGET_PACKAGES
+              value: "/mnt/data/packages"
+            - name: DOCKER_HOST
+              value: unix:///var/run/user/1000/docker.sock
+        - name: docker
+          image: docker:dind-rootless
+          args:
+            - dockerd
+            - --registry-mirror=http://registry-cache:5000
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /var/run
+              name: docker-socket-volume
+          env:
+            - name: DOCKER_DRIVER
+              value: overlay2
+      volumes:
+        - name: git-repo-volume
+          persistentVolumeClaim:
+            claimName: git-repo-pvc
+        - name: docker-socket-volume
+          emptyDir: {}
+        - name: ssh-keys-volume
+          secret:
+            secretName: git-client-keys
