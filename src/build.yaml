@@ -23,7 +23,6 @@ spec:
               mkdir -p ~/.ssh &&
               cp /tmp/ssh/id_rsa ~/.ssh/id_rsa &&
               chmod 600 ~/.ssh/id_rsa &&
-              ssh-keyscan git-server-service > ~/.ssh/known_hosts &&
               sleep infinity
           volumeMounts:
             - mountPath: /mnt/data

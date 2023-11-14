@@ -13,12 +13,9 @@ Console.CancelKeyPress += (sender, key) =>
     cancellationSource.Cancel();
 };
 
+var defaultTag = DateTime.UtcNow.ToString("yyyy.MM.dd.HHmm");
 var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
 var _kubernetesClient = new Kubernetes(config);
-
-var fileOption = new Option<string>("--file", "Path to the YAML file")
-{
-};
 
 var envOption = new Option<string[]>("--env", "Environment variables in the format KEY=VALUE")
 {
@@ -30,34 +27,52 @@ var branchOption = new Option<string>("--branch", "Branch to build")
     IsRequired = true
 };
 
-var repoOption = new Option<string>("--repo", "MindMatrix repo to clone")
+var repoOption = new Option<string>("--repo", "MindMatrix repo to clone (ex. git-amp-ssh.default.svc.cluster.local)")
 {
     IsRequired = true
 };
 
-var buildOption = new Option<string>("--build", "Build command to pass to the dotnet container")
+var imageOption = new Option<string>("--image", "ex. mindmatrix/<image>")
 {
     IsRequired = true
 };
+
+var tagOption = new Option<string>("--tag", $"ex. {defaultTag} (yyyy.MM.dd.HHmm)")
+{
+};
+
+var projectOption = new Option<string>("--project", "ex. Applications/MindMatrix.Applications.TaskManager2/MindMatrix.Applications.TaskManager2.csproj (do not prefix with /)")
+{
+    IsRequired = true
+};
+
+//cd /tmp/app/Applications/MindMatrix.Applications.TaskManager2 && chmod +x build.sh && ./build.sh
+//dotnet run --repo git-amp-ssh.default.svc.cluster.local --branch specification --build "cd /tmp/app/Applications/MindMatrix.Applications.TaskManager2 && chmod +x builld.sh && ./build.sh $BUILD_NUMBER"
+//dotnet run -- --repo git-amp-ssh.default.svc.cluster.local --branch specification --image "mindmatrix/taskmanager2" --project "Applications/MindMatrix.Applications.TaskManager2/MindMatrix.Applications.TaskManager2.csproj"
+var tag = new Option<string>("--tag", "Docker tag");
 
 var success = false;
 var rootCommand = new RootCommand("test");
-rootCommand.AddOption(fileOption);
 rootCommand.AddOption(envOption);
 rootCommand.AddOption(branchOption);
 rootCommand.AddOption(repoOption);
-rootCommand.AddOption(buildOption);
+rootCommand.AddOption(imageOption);
+rootCommand.AddOption(projectOption);
+rootCommand.AddOption(tagOption);
 
-rootCommand.SetHandler(async (string file, string[] env, string branch, string repo, string build) =>
+rootCommand.SetHandler(async (string[] env, string branch, string repo, string image, string project, string? tag) =>
 {
-    file ??= "build.yaml";
+    if (project.Any(ch => Path.GetInvalidPathChars().Contains(ch)))
+        throw new Exception("project must be a valid file path without a leading /");
+
+    tag ??= defaultTag;
 
     var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
     var client = new Kubernetes(config);
     var runner = new KubernetesJobRunner(client);
 
-    success = await runner.RunJobAsync(file, branch, repo, build, env, cancellationSource.Token);
-}, fileOption, envOption, branchOption, repoOption, buildOption);
+    success = await runner.RunJobAsync(branch, repo, project, image, tag, env, cancellationSource.Token);
+}, envOption, branchOption, repoOption, imageOption, projectOption, tagOption);
 
 var result = await rootCommand.InvokeAsync(args);
 

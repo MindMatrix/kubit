@@ -1,4 +1,5 @@
 using System.Net.WebSockets;
+using System.Reflection.Metadata;
 using System.Text;
 using k8s;
 using k8s.Models;
@@ -14,9 +15,9 @@ public class KubernetesJobRunner
         _client = client;
     }
 
-    public async Task<bool> RunJobAsync(string yamlFilePath, string branch, string repo, string buildCommand, string[] envVariables, CancellationToken cancellationToken)
+    public async Task<bool> RunJobAsync(string branch, string repo, string project, string image, string tag, string[] envVariables, CancellationToken cancellationToken)
     {
-        var jobYaml = File.ReadAllText(yamlFilePath);
+        var jobYaml = File.ReadAllText("build.yaml");
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .WithTypeInspector(inner => new JsonPropertyNameTypeInspector(inner))
@@ -35,8 +36,8 @@ public class KubernetesJobRunner
             var job = await _client.CreateNamespacedJobAsync(jobData, jobData.Metadata.NamespaceProperty, cancellationToken: cancellationToken);
 
             Console.WriteLine("Waiting for running state");
-            await Task.Delay(5000);
-            await WaitForJobToRunAsync(jobName, jobData.Metadata.NamespaceProperty, TimeSpan.FromMinutes(1), cancellationToken);
+            await Task.Delay(5000, cancellationToken);
+            await WaitForJobToRunAsync(jobName, jobData.Metadata.NamespaceProperty, TimeSpan.FromMinutes(5), cancellationToken);
 
             var podName = await GetPodName(jobData.Metadata.NamespaceProperty, jobName, cancellationToken);
             if (podName == null)
@@ -45,22 +46,24 @@ public class KubernetesJobRunner
                 return false;
             }
 
+
             var commands = new string[] {
-                $"git clone --branch {branch} --single-branch --depth 1 git@git-server-service:/tmp/{repo} /tmp/app"
-                // ... add the rest of your commands here ...
+                $"ssh-keyscan {repo} > ~/.ssh/known_hosts",
+                $"git clone --branch {branch} --single-branch --depth 1 git@{repo}:/tmp/repo /tmp/app"
             };
+
             if (!await ExecuteCommandsInPodAsync(jobData.Metadata.NamespaceProperty, podName, "build", commands, cancellationToken))
                 return false;
 
-            commands = new string[] {
-                buildCommand
-                //"cd /tmp/app/Applications/MindMatrix.Applications.TaskManager2 && chmod +x build.sh && ./build.sh"
-            };
+            await CopyFileToPodAsync(jobData.Metadata.NamespaceProperty, podName, "build", "build.sh", "/tmp/app/build.sh", cancellationToken);
+
+            commands = [
+                $"cd /tmp/app",
+                $"./build.sh '{project}' '{image}' '{tag}'"
+            ];
             if (!await ExecuteCommandsInPodAsync(jobData.Metadata.NamespaceProperty, podName, "build", commands, cancellationToken))
                 return false;
 
-            // Stream logs
-            //await StreamLogsAsync(jobData.Metadata.NamespaceProperty, podName, jobName, "build", cancellationToken);
         }
         finally
         {
@@ -94,36 +97,51 @@ public class KubernetesJobRunner
             }
         }
     }
-    public async Task<bool> ExecuteCommandsInPodAsync(string namespaceName, string podName, string containerName, string[] commands, CancellationToken cancellationToken)
+    public async Task<bool> CopyFileToPodAsync(string namespaceName, string podName, string containerName, string localFilePath, string remoteFilePath, CancellationToken cancellationToken)
     {
         // Wait for the pod to be running
         // Code to check the pod status goes here
-        foreach (var command in commands)
-        {
-            Console.WriteLine(">" + command);
-            var execRequest = _client.WebSocketNamespacedPodExecAsync(
-                podName,
-                namespaceName,
-                new[] { "sh", "-c", command },
-                containerName,
-                stderr: true,
-                stdout: true,
-                cancellationToken: cancellationToken);
+        Console.WriteLine($"> cp {localFilePath} {podName}[{containerName}]/{remoteFilePath}");
+        var lines = File.ReadAllLines(localFilePath);
+        var commandLines = new List<string>();
+        foreach (var it in lines)
+            commandLines.Add($"echo '{it.Replace("'", "\\'")}' >> {remoteFilePath}");
 
-            using (var webSocket = await execRequest)
-            {
-                await ReadFromWebSocketAsync(webSocket, cancellationToken);
-                if (!execRequest.IsCompletedSuccessfully)
-                    return false;
-            }
+        commandLines.Add($"chmod +x {remoteFilePath}");
+        return await ExecuteCommandsInPodAsync(namespaceName, podName, containerName, commandLines, cancellationToken);
+    }
+
+    private async Task<bool> ExecuteCommandsInPodAsync(string namespaceName, string podName, string containerName, IEnumerable<string> commands, CancellationToken cancellationToken)
+    {
+        var command = string.Join(" && ", commands);
+        Console.WriteLine(">> " + command);
+        var execRequest = _client.WebSocketNamespacedPodExecAsync(
+            podName,
+            namespaceName,
+            ["sh", "-c", command],
+            containerName,
+            stderr: true,
+            stdout: true,
+            cancellationToken: cancellationToken);
+
+        using (var webSocket = await execRequest)
+        {
+            var result = await ReadFromWebSocketAsync(webSocket, cancellationToken);
+            if (!execRequest.IsCompletedSuccessfully || result == null)
+                return false;
+
+            //cphillips83: could probably handle this better
+            if (!result.Contains("\"status\":\"Success\""))
+                return false;
         }
 
         return true;
     }
 
-    private async Task ReadFromWebSocketAsync(WebSocket webSocket, CancellationToken cancellationToken)
+    private async Task<string?> ReadFromWebSocketAsync(WebSocket webSocket, CancellationToken cancellationToken)
     {
         var buffer = new ArraySegment<byte>(new byte[4096]);
+        string? output = null;
 
         while (!cancellationToken.IsCancellationRequested && webSocket.State == WebSocketState.Open)
         {
@@ -135,10 +153,11 @@ public class KubernetesJobRunner
             }
             if (result.MessageType != WebSocketMessageType.Text)
             {
-                var output = Encoding.UTF8.GetString(buffer.Array!, 0, result.Count);
+                output = Encoding.UTF8.GetString(buffer.Array!, 0, result.Count);
                 Console.Write(output);
             }
         }
+        return output;
     }
 
 
@@ -177,40 +196,40 @@ public class KubernetesJobRunner
         return pod.Metadata.Name;
     }
 
-    private async Task StreamLogsAsync(string namespaceName, string podName, string jobName, string containerName, CancellationToken cancellationToken)
-    {
-        var jobCompleted = false;
+    // private async Task StreamLogsAsync(string namespaceName, string podName, string jobName, string containerName, CancellationToken cancellationToken)
+    // {
+    //     var jobCompleted = false;
 
-        // Creating a task to monitor job completion
-        var jobMonitorTask = Task.Run(async () =>
-        {
-            while (!jobCompleted && !cancellationToken.IsCancellationRequested)
-            {
-                var job = await _client.ReadNamespacedJobAsync(jobName, namespaceName, cancellationToken: cancellationToken);
-                if (job.Status.CompletionTime != null)
-                {
-                    jobCompleted = true;
-                }
-                await Task.Delay(1000, cancellationToken); // Polling interval
-            }
-        }, cancellationToken);
+    //     // Creating a task to monitor job completion
+    //     var jobMonitorTask = Task.Run(async () =>
+    //     {
+    //         while (!jobCompleted && !cancellationToken.IsCancellationRequested)
+    //         {
+    //             var job = await _client.ReadNamespacedJobAsync(jobName, namespaceName, cancellationToken: cancellationToken);
+    //             if (job.Status.CompletionTime != null)
+    //             {
+    //                 jobCompleted = true;
+    //             }
+    //             await Task.Delay(1000, cancellationToken); // Polling interval
+    //         }
+    //     }, cancellationToken);
 
-        // Reading logs asynchronously from the "build" container
-        var logStream = await _client.ReadNamespacedPodLogAsync(podName, namespaceName, container: containerName, follow: true, cancellationToken: cancellationToken);
-        using (var streamReader = new StreamReader(logStream))
-        {
-            while (!jobCompleted && !cancellationToken.IsCancellationRequested)
-            {
-                var line = await streamReader.ReadLineAsync(cancellationToken);
-                if (line != null)
-                {
-                    Console.WriteLine(line);
-                }
-            }
-        }
+    //     // Reading logs asynchronously from the "build" container
+    //     var logStream = await _client.ReadNamespacedPodLogAsync(podName, namespaceName, container: containerName, follow: true, cancellationToken: cancellationToken);
+    //     using (var streamReader = new StreamReader(logStream))
+    //     {
+    //         while (!jobCompleted && !cancellationToken.IsCancellationRequested)
+    //         {
+    //             var line = await streamReader.ReadLineAsync(cancellationToken);
+    //             if (line != null)
+    //             {
+    //                 Console.WriteLine(line);
+    //             }
+    //         }
+    //     }
 
-        await jobMonitorTask; // Wait for the job monitoring task to complete
-        Console.WriteLine($"Job '{jobName}' in namespace '{namespaceName}' has completed.");
-    }
+    //     await jobMonitorTask; // Wait for the job monitoring task to complete
+    //     Console.WriteLine($"Job '{jobName}' in namespace '{namespaceName}' has completed.");
+    // }
 
 }

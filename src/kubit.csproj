@@ -11,6 +11,9 @@
     <None Update="build.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="build.sh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>    
   </ItemGroup>
 
   <ItemGroup>
