@@ -34,6 +34,8 @@ else
     var kubeconfigFileInfo = new FileInfo(kubeconfigPath);
     var test = await KubernetesClientConfiguration.LoadKubeConfigAsync(kubeconfigFileInfo, useRelativePaths: false);
     Console.WriteLine($"this is something: {test.FileName}");
+    using var sr = new StreamReader(kubeconfigFileInfo.OpenRead());
+    Console.WriteLine($"this is something2: {await sr.ReadToEndAsync()}");
 
     config = KubernetesClientConfiguration.BuildConfigFromConfigFile(kubeconfigFileInfo);
 }
