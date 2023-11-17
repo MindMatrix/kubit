@@ -12,7 +12,7 @@ pipeline {
             steps {    
                 script {
                     currentBuild.displayName = "${VERSION}+${SAFEBRANCH}"
-                    echo 'Building version ' + VersionNumber([versionNumberString : "${VERSION}+${SAFEBRANCH}", projectStartDate : '2017-01-01'])
+                    echo 'Building version ' + VersionNumber([versionNumberString : "${VERSION}-${SAFEBRANCH}", projectStartDate : '2017-01-01'])
                 }
             }
         }
@@ -22,7 +22,7 @@ pipeline {
                 withKubeCredentials([
                     [credentialsId: 'kubeconfig'],
                 ]) {
-                    sh 'cd src && dotnet run -- --repo git-amp-ssh.default.svc.cluster.local --branch "$BRANCH" --tag "$VERSION+$SAFEBRANCH" --image "mindmatrix/taskmanager2" --project "Applications/MindMatrix.Applications.TaskManager2/src/taskmanager.csproj"'
+                    sh 'cd src && dotnet run -- --repo git-amp-ssh.default.svc.cluster.local --branch "$BRANCH" --tag "$VERSION-$SAFEBRANCH" --image "mindmatrix/taskmanager2" --project "Applications/MindMatrix.Applications.TaskManager2/src/taskmanager.csproj"'
                 }  
             }
         }
@@ -31,7 +31,7 @@ pipeline {
                 withKubeCredentials([
                     [credentialsId: 'kubeconfig'],
                 ]) {
-                    sh 'kubectl set image -n ampdevelop "deployment/task-$TASK" tm=mindmatrix/taskmanager2:$VERSION+$SAFEBRANCH'
+                    sh 'kubectl set image -n ampdevelop "deployment/task-$TASK" tm=mindmatrix/taskmanager2:$VERSION-$SAFEBRANCH'
                 }                
             }
         } 
