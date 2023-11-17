@@ -2,6 +2,7 @@
 using System.CommandLine.Builder;
 using System.Text;
 using k8s;
+using k8s.KubeConfigModels;
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -14,29 +15,6 @@ Console.CancelKeyPress += (sender, key) =>
 };
 
 var defaultTag = DateTime.UtcNow.ToString("yyyy.MM.dd.HHmm");
-var kubeconfigPath = Environment.GetEnvironmentVariable("KUBECONFIG");
-Console.WriteLine("Using kubeconfig: " + kubeconfigPath);
-await Task.Delay(30000);
-KubernetesClientConfiguration config;
-if (string.IsNullOrEmpty(kubeconfigPath))
-{
-    // Explicitly use the in-cluster configuration if KUBECONFIG is not set
-    config = KubernetesClientConfiguration.InClusterConfig();
-}
-else
-{
-    // Use the specified kubeconfig file
-    if (!File.Exists(kubeconfigPath))
-    {
-        throw new FileNotFoundException($"Specified kubeconfig file not found: {kubeconfigPath}");
-    }
-
-    var kubeconfigFileInfo = new FileInfo(kubeconfigPath);
-    using var sr = new StreamReader(kubeconfigFileInfo.OpenRead());
-    config = await KubernetesClientConfiguration.BuildConfigFromConfigFileAsync(kubeconfig: kubeconfigFileInfo.OpenRead(), currentContext: "development");
-}
-
-var _kubernetesClient = new Kubernetes(config);
 
 var envOption = new Option<string[]>("--env", "Environment variables in the format KEY=VALUE")
 {
@@ -88,7 +66,7 @@ rootCommand.SetHandler(async (string[] env, string branch, string repo, string i
 
     tag ??= defaultTag;
 
-    var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+    var config = KubernetesClientConfiguration.BuildDefaultConfig();
     var client = new Kubernetes(config);
     var runner = new KubernetesJobRunner(client);
 
