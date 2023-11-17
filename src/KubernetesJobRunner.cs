@@ -78,7 +78,7 @@ public class KubernetesJobRunner
                 $"git config --global user.name \"Your Name\"",
                 $"git fetch --prune",
                 $"git clean -xfd",
-                $"git checkout {branch}",
+                $"git checkout -f {branch}",
                 $"git pull",
                 $"git merge origin/specification --no-edit --no-commit --no-ff",
             };
