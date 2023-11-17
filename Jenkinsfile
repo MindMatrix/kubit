@@ -12,7 +12,8 @@ pipeline {
             steps {    
                 script {
                     currentBuild.displayName = "${VERSION}+${SAFEBRANCH}"
-                echo 'Building version ' + VersionNumber([versionNumberString : "${VERSION}+${SAFEBRANCH}", projectStartDate : '2017-01-01'])
+                    echo 'Building version ' + VersionNumber([versionNumberString : "${VERSION}+${SAFEBRANCH}", projectStartDate : '2017-01-01'])
+                }
             }
         }
         stage("build"){
