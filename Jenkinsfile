@@ -19,7 +19,7 @@ pipeline {
         stage("build"){
             steps{
                 sh 'git clean -xfd'
-                sh 'dotnet run -- --repo git-amp-ssh.default.svc.cluster.local --branch "$BRANCH" --tag "$VERSION+$SAFEBRANCH" --image "mindmatrix/taskmanager2" --project "Applications/MindMatrix.Applications.TaskManager2/src/taskmanager.csproj"'
+                sh 'cd src && dotnet run -- --repo git-amp-ssh.default.svc.cluster.local --branch "$BRANCH" --tag "$VERSION+$SAFEBRANCH" --image "mindmatrix/taskmanager2" --project "Applications/MindMatrix.Applications.TaskManager2/src/taskmanager.csproj"'
             }
         }
         stage("deploy"){
