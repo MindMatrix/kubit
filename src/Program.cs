@@ -16,10 +16,22 @@ Console.CancelKeyPress += (sender, key) =>
 var defaultTag = DateTime.UtcNow.ToString("yyyy.MM.dd.HHmm");
 var kubeconfigPath = Environment.GetEnvironmentVariable("KUBECONFIG");
 Console.WriteLine("Using kubeconfig: " + kubeconfigPath);
-var config = string.IsNullOrEmpty(kubeconfigPath)
-    ? KubernetesClientConfiguration.BuildConfigFromConfigFile()
-    : KubernetesClientConfiguration.BuildConfigFromConfigFile(kubeconfigPath);
 
+KubernetesClientConfiguration config;
+if (string.IsNullOrEmpty(kubeconfigPath))
+{
+    // Explicitly use the in-cluster configuration if KUBECONFIG is not set
+    config = KubernetesClientConfiguration.InClusterConfig();
+}
+else
+{
+    // Use the specified kubeconfig file
+    if (!File.Exists(kubeconfigPath))
+    {
+        throw new FileNotFoundException($"Specified kubeconfig file not found: {kubeconfigPath}");
+    }
+    config = KubernetesClientConfiguration.BuildConfigFromConfigFile(kubeconfigPath);
+}
 
 var _kubernetesClient = new Kubernetes(config);
 
