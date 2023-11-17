@@ -22,7 +22,6 @@ pipeline {
                 withKubeCredentials([
                     [credentialsId: 'kubeconfig'],
                 ]) {
-                    sh 'export'
                     sh 'cd src && dotnet run -- --repo git-amp-ssh.default.svc.cluster.local --branch "$BRANCH" --tag "$VERSION+$SAFEBRANCH" --image "mindmatrix/taskmanager2" --project "Applications/MindMatrix.Applications.TaskManager2/src/taskmanager.csproj"'
                 }  
             }
