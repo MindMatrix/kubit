@@ -30,7 +30,7 @@ else
     {
         throw new FileNotFoundException($"Specified kubeconfig file not found: {kubeconfigPath}");
     }
-    config = KubernetesClientConfiguration.BuildConfigFromConfigFile(kubeconfigPath);
+    config = KubernetesClientConfiguration.BuildConfigFromConfigFile(kubeconfigPath: kubeconfigPath);
 }
 
 var _kubernetesClient = new Kubernetes(config);
