@@ -16,7 +16,7 @@ Console.CancelKeyPress += (sender, key) =>
 var defaultTag = DateTime.UtcNow.ToString("yyyy.MM.dd.HHmm");
 var kubeconfigPath = Environment.GetEnvironmentVariable("KUBECONFIG");
 Console.WriteLine("Using kubeconfig: " + kubeconfigPath);
-
+await Task.Delay(30000);
 KubernetesClientConfiguration config;
 if (string.IsNullOrEmpty(kubeconfigPath))
 {
