@@ -33,7 +33,7 @@ else
 
     var kubeconfigFileInfo = new FileInfo(kubeconfigPath);
     using var sr = new StreamReader(kubeconfigFileInfo.OpenRead());
-    config = await KubernetesClientConfiguration.BuildConfigFromConfigFileAsync(kubeconfig: kubeconfigFileInfo.OpenRead());
+    config = await KubernetesClientConfiguration.BuildConfigFromConfigFileAsync(kubeconfig: kubeconfigFileInfo.OpenRead(), currentContext: "development");
 }
 
 var _kubernetesClient = new Kubernetes(config);
