@@ -3,6 +3,7 @@ pipeline {
     
     environment {        
         BRANCH = "${BRANCH_NAME}"
+        TASK = "${TASK_NAME}"
         SAFEBRANCH = "${env.BRANCH.find(/[a-zA-Z0-9\-\.]+/)}"
         VERSION = "${(new Date()).format("yyyy.MM.dd")}.${BUILD_ID}"
     }
