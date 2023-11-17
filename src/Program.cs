@@ -32,6 +32,8 @@ else
     }
 
     var kubeconfigFileInfo = new FileInfo(kubeconfigPath);
+    var test = await KubernetesClientConfiguration.LoadKubeConfigAsync(kubeconfigFileInfo);
+    Console.WriteLine(test.FileName);
     config = KubernetesClientConfiguration.BuildConfigFromConfigFile(kubeconfigFileInfo);
 }
 
