@@ -14,3 +14,7 @@ Requires
 3. --file (defaults to build.yaml)
 4. --build (command to pass to build project)
 5. --env (can be repeated and used to set env variables for your build script)
+
+```shell
+dotnet run -- --repo git-amp-ssh.default.svc.cluster.local --branch company-usergroup --image "mindmatrix/taskmanager2" --project "Applications/MindMatrix.Applications.TaskManager2/src/taskmanager.csproj"
+```

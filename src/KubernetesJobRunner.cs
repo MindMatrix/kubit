@@ -31,6 +31,8 @@ public class KubernetesJobRunner
             // Inject environment variables
             InjectEnvironmentVariables(jobData, envVariables);
 
+            var createdPvc = await EnsurePersistentVolumeClaimAsync(jobData.Metadata.NamespaceProperty, "git-repo", cancellationToken);
+
             // Create the job
             Console.WriteLine("Creating job");
             var job = await _client.CreateNamespacedJobAsync(jobData, jobData.Metadata.NamespaceProperty, cancellationToken: cancellationToken);
@@ -46,19 +48,48 @@ public class KubernetesJobRunner
                 return false;
             }
 
-
             var commands = new string[] {
-                $"ssh-keyscan {repo} > ~/.ssh/known_hosts",
-                $"git clone --branch {branch} --single-branch --depth 1 git@{repo}:/tmp/repo /tmp/app"
+                $"ssh-keyscan {repo} > ~/.ssh/known_hosts"
             };
 
             if (!await ExecuteCommandsInPodAsync(jobData.Metadata.NamespaceProperty, podName, "build", commands, cancellationToken))
                 return false;
 
-            await CopyFileToPodAsync(jobData.Metadata.NamespaceProperty, podName, "build", "build.sh", "/tmp/app/build.sh", cancellationToken);
+            if (createdPvc)
+            {
+                var pvcCommands = new string[] {
+                    $"git clone --branch main git@{repo}:/tmp/repo /mnt/data/app"
+                };
+
+                if (!await ExecuteCommandsInPodAsync(jobData.Metadata.NamespaceProperty, podName, "build", pvcCommands, cancellationToken))
+                    return false;
+            }
+
+            // var commands = new string[] {
+            //     $"ssh-keyscan {repo} > ~/.ssh/known_hosts",
+            //     $"git clone --branch {branch} --single-branch --depth 1 git@{repo}:/tmp/repo /mnt/data/app",
+            //     $"cd /mnt/data/app",
+            //     $"git fetch --depth 1 origin specification",
+            //     $"git merge specification",
+            // };
+            commands = new string[] {
+                $"cd /mnt/data/app",
+                $"git config --global user.email \"you@example.com\"",
+                $"git config --global user.name \"Your Name\"",
+                $"git fetch --prune",
+                $"git clean -xfd",
+                $"git checkout {branch}",
+                $"git pull",
+                $"git merge origin/specification --no-edit --no-commit --no-ff",
+            };
+
+            if (!await ExecuteCommandsInPodAsync(jobData.Metadata.NamespaceProperty, podName, "build", commands, cancellationToken))
+                return false;
+
+            await CopyFileToPodAsync(jobData.Metadata.NamespaceProperty, podName, "build", "build.sh", "/mnt/data/app/build.sh", cancellationToken);
 
             commands = [
-                $"cd /tmp/app",
+                $"cd /mnt/data/app",
                 $"./build.sh '{project}' '{image}' '{tag}'"
             ];
             if (!await ExecuteCommandsInPodAsync(jobData.Metadata.NamespaceProperty, podName, "build", commands, cancellationToken))
@@ -72,6 +103,46 @@ public class KubernetesJobRunner
             await _client.DeleteNamespacedJobAsync(jobName, jobData.Metadata.NamespaceProperty, propagationPolicy: "Foreground");
         }
         return true;
+    }
+
+
+    public async Task<bool> EnsurePersistentVolumeClaimAsync(string namespaceName, string pvcName, CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Check if the PVC already exists
+            var pvc = await _client.ReadNamespacedPersistentVolumeClaimAsync(pvcName, namespaceName, cancellationToken: cancellationToken);
+            Console.WriteLine($"PVC '{pvcName}' already exists in namespace '{namespaceName}'.");
+            return false;
+        }
+        catch (k8s.Autorest.HttpOperationException ke) when (ke.Response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            // PVC not found, create a new one
+            Console.WriteLine($"Creating PVC '{pvcName}' in namespace '{namespaceName}'.");
+            var newPvc = new V1PersistentVolumeClaim
+            {
+                Metadata = new V1ObjectMeta
+                {
+                    Name = pvcName
+                },
+                Spec = new V1PersistentVolumeClaimSpec
+                {
+
+                    AccessModes = new[] { "ReadWriteOnce" },
+                    Resources = new V1ResourceRequirements
+                    {
+                        Requests = new System.Collections.Generic.Dictionary<string, ResourceQuantity>
+                        {
+                            { "storage", new ResourceQuantity("30Gi") }
+                        }
+                    }
+                }
+            };
+
+            var createdPvc = await _client.CreateNamespacedPersistentVolumeClaimAsync(newPvc, namespaceName, cancellationToken: cancellationToken);
+            Console.WriteLine($"PVC '{createdPvc.Metadata.Name}' created in namespace '{namespaceName}'.");
+            return true;
+        }
     }
 
     public async Task WaitForJobToRunAsync(string jobName, string namespaceName, TimeSpan timeout, CancellationToken cancellationToken)
