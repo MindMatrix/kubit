@@ -14,7 +14,11 @@ Console.CancelKeyPress += (sender, key) =>
 };
 
 var defaultTag = DateTime.UtcNow.ToString("yyyy.MM.dd.HHmm");
-var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+var kubeconfigPath = Environment.GetEnvironmentVariable("KUBECONFIG");
+var config = string.IsNullOrEmpty(kubeconfigPath)
+    ? KubernetesClientConfiguration.InClusterConfig()
+    : KubernetesClientConfiguration.BuildConfigFromConfigFile(kubeconfigPath);
+
 var _kubernetesClient = new Kubernetes(config);
 
 var envOption = new Option<string[]>("--env", "Environment variables in the format KEY=VALUE")
