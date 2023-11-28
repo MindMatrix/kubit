@@ -23,13 +23,18 @@ public class KubernetesJobRunner
             .WithTypeInspector(inner => new JsonPropertyNameTypeInspector(inner))
             .Build();
         var jobData = deserializer.Deserialize<V1Job>(jobYaml);
-        var jobName = "build-" + DateTime.UtcNow.Ticks;
+        var jobName = "build-tm";
         jobData.Metadata.Name = jobName;
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
             // Inject environment variables
             InjectEnvironmentVariables(jobData, envVariables);
+            try
+            {
+                await _client.DeleteNamespacedJobAsync(jobName, jobData.Metadata.NamespaceProperty, cancellationToken: cancellationToken);
+            }
+            catch { }
 
             var createdPvc = await EnsurePersistentVolumeClaimAsync(jobData.Metadata.NamespaceProperty, "git-repo", cancellationToken);
 
