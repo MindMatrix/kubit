@@ -85,7 +85,6 @@ public class KubernetesJobRunner
                 $"git clean -xfd",
                 $"git checkout -f {branch}",
                 $"git pull",
-                $"git merge origin/specification --no-edit --no-commit --no-ff",
             };
 
             if (!await ExecuteCommandsInPodAsync(jobData.Metadata.NamespaceProperty, podName, "build", commands, cancellationToken))
