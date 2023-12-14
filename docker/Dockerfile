@@ -1,8 +1,28 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0
+# FROM mcr.microsoft.com/dotnet/sdk:8.0
 
-# Add Docker's official GPG key:
+# # Add Docker's official GPG key:
+# RUN curl -fsSL https://get.docker.com | sh
+
+# RUN apt update && apt install -y git openssh-client \
+#     && rm -rf /var/lib/apt/lists/* \
+#     && apt clean
+
+
+FROM jenkins/inbound-agent:latest
+
+USER root
+
 RUN curl -fsSL https://get.docker.com | sh
 
-RUN apt update && apt install -y git openssh-client \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt clean
+# Install .NET SDK
+RUN apt-get update && \
+    apt-get install -y apt-transport-https software-properties-common wget git openssh-client && \
+    wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    rm packages-microsoft-prod.deb && \
+    apt-get update && \
+    apt-get install -y dotnet-sdk-8.0 && \
+    rm -rf /var/lib/apt/lists/* && apt clean
+
+# Switch back to the jenkins user
+USER jenkins

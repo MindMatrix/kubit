@@ -1,9 +1,9 @@
 pipeline {
     agent {
-        docker {
-            image 'docker.gladeos.net/kubit/dotnet-sdk:8.0'
+        kubernetes {
+            label 'dotnet-sdk8'
         }
-    }    
+    }
     environment {        
         BRANCH = "${BRANCH_NAME}"
         TASK = "${TASK_NAME}"
