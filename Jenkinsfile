@@ -1,5 +1,9 @@
 pipeline {
-    agent any    
+    agent {
+        docker {
+            image 'docker-hosted.gladeos.net/kubit/dotnet-sdk:8.0'
+        }
+    }    
     environment {        
         BRANCH = "${BRANCH_NAME}"
         TASK = "${TASK_NAME}"
@@ -16,7 +20,6 @@ pipeline {
             }
         }
         stage("build"){
-            agent { dockerfile true }
             steps{
                 sh 'git clean -xfd'
                 // withKubeCredentials([
