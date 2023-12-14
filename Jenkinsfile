@@ -15,13 +15,13 @@ pipeline {
                     - 99d
                     tty: true
                 '''            
-            //cloud 'kubernetes'
-            containerTemplate {
-            name 'dotnet-sdk8'
-            image 'docker.gladeos.net/jenkins/dotnet-sdk:8.0'
-            command 'sleep'
-            args '99d'
-            }
+            // //cloud 'kubernetes'
+            // containerTemplate {
+            // name 'dotnet-sdk8'
+            // image 'docker.gladeos.net/jenkins/dotnet-sdk:8.0'
+            // command 'sleep'
+            // args '99d'
+            // }
         }
     }
     
