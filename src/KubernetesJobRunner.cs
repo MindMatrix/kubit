@@ -60,15 +60,12 @@ public class KubernetesJobRunner
             if (!await ExecuteCommandsInPodAsync(jobData.Metadata.NamespaceProperty, podName, "build", commands, cancellationToken))
                 return false;
 
-            if (createdPvc)
-            {
-                var pvcCommands = new string[] {
-                    $"git clone --branch main git@{repo}:/tmp/repo /mnt/data/app"
-                };
+            var pvcCommands = new string[] {
+                $"if [ ! -d /mnt/data/app ]; then git clone --branch main git@{repo}:/tmp/repo /mnt/data/app; fi"
+            };
 
-                if (!await ExecuteCommandsInPodAsync(jobData.Metadata.NamespaceProperty, podName, "build", pvcCommands, cancellationToken))
-                    return false;
-            }
+            if (!await ExecuteCommandsInPodAsync(jobData.Metadata.NamespaceProperty, podName, "build", pvcCommands, cancellationToken))
+                return false;
 
             // var commands = new string[] {
             //     $"ssh-keyscan {repo} > ~/.ssh/known_hosts",

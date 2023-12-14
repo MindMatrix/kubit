@@ -10,6 +10,7 @@ fi
 CS_PROJ_PATH=$1
 BUILD_IMAGE=$2
 BUILD_TAG=$3
+DOCKER_URL=docker-hosted.gladeos.net
 
 BUILD_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 echo "Branch: $BUILD_BRANCH"
@@ -30,7 +31,7 @@ fi
 # Check if Docker credentials are set
 if [[ -n $DOCKER_USERNAME && -n $DOCKER_PAT ]]; then
     echo "Docker credentials found, performing docker login."
-    echo "$DOCKER_PAT" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    echo "$DOCKER_PAT" | docker login "$DOCKER_URL" -u "$DOCKER_USERNAME" --password-stdin
     if [ $? -ne 0 ]; then
         echo "Docker login failed."
         exit 1
@@ -44,7 +45,7 @@ if [[ -n $DOCKER_USERNAME && -n $DOCKER_PAT ]]; then
         exit 1
     fi
     
-    docker logout
+    docker logout "$DOCKER_URL"
 else
     echo "Docker credentials not found, skipping docker login and push."
 fi

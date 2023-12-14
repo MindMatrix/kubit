@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: build
-  namespace: default
+  namespace: jenkins
 spec:
   backoffLimit: 0
   ttlSecondsAfterFinished: 60
@@ -15,7 +15,7 @@ spec:
       shareProcessNamespace: true
       containers:
         - name: build
-          image: mindmatrix/dotnet8-sdk:latest
+          image: docker-hosted.gladeos.net/kubit/build:2023.12.13.2215
           command:
             - /bin/sh
             - -c
@@ -53,7 +53,7 @@ spec:
           image: docker:dind-rootless
           args:
             - dockerd
-            - --registry-mirror=http://registry-cache:5000
+            - --registry-mirror=http://nexus-docker.nexus.svc.cluster.local:9901
           securityContext:
             privileged: true
           volumeMounts:
@@ -74,3 +74,5 @@ spec:
         - name: ssh-keys-volume
           secret:
             secretName: git-client-keys
+# kubectl create secret generic dockerhub-credentials --from-literal=DOCKER_USERNAME=docker-write --from-literal=DOCKER_PAT=
+#dotnet run -- --repo git-server-service.jenkins.svc.cluster.local --branch main --image "docker-hosted.gladeos.net/amp/taskmanager --project "Applications/MindMatrix.Applications.TaskManager2/src//MindMatrix.Applications.TaskManager.csproj"

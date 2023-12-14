@@ -1,5 +1,8 @@
 # kubit
 
+```
+docker build docker -t docker-hosted.gladeos.net/kubit:1.
+```
 
 1. Requires docker-hub secret to access private repo
 2. Requires git-repo-volume to store packages for performance, should be RWX
@@ -16,5 +19,8 @@ Requires
 5. --env (can be repeated and used to set env variables for your build script)
 
 ```shell
-dotnet run -- --repo git-amp-ssh.default.svc.cluster.local --branch company-usergroup --image "mindmatrix/taskmanager2" --project "Applications/MindMatrix.Applications.TaskManager2/src/taskmanager.csproj"
+dotnet run -- --repo git-server-service.jenkins.svc.cluster.local --branch company-usergroup --image "mindmatrix/taskmanager2" --project "Applications/MindMatrix.Applications.TaskManager2/src/taskmanager.csproj"
 ```
+
+
+dotnet run -- --repo git-server-service.jenkins.svc.cluster.local --branch main --image "mindmatrix/taskmanager2" --project "Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj"
