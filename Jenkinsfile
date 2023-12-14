@@ -1,7 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-            label 'dotnet-sdk8'
+            inheritFrom 'dotnet-sdk8'
         }
     }
     environment {        
