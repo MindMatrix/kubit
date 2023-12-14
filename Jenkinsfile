@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { dockerfile true }
     
     environment {        
         BRANCH = "${BRANCH_NAME}"
