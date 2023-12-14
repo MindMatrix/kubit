@@ -46,13 +46,15 @@ pipeline {
             steps{
                 container('dotnet-sdk8') {
                     withCredentials([usernamePassword(credentialsId: 'docker-hosted', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PAT')]) {
-                        try {
-                            sh 'docker login $BUILD_HOST -u $DOCKER_USERNAME -p $DOCKER_PAT'
-                            sh 'docker push $BUILD_IMAGE:$BUILD_TAG'
-                        } catch (Exception e) {
-                            echo "An error occurred: ${e.getMessage()}"
-                        } finally {
-                            sh 'docker logout $BUILD_HOST'
+                        script{
+                            try {
+                                sh 'docker login $BUILD_HOST -u $DOCKER_USERNAME -p $DOCKER_PAT'
+                                sh 'docker push $BUILD_IMAGE:$BUILD_TAG'
+                            } catch (Exception e) {
+                                echo "An error occurred: ${e.getMessage()}"
+                            } finally {
+                                sh 'docker logout $BUILD_HOST'
+                            }
                         }
                     }
                 }
