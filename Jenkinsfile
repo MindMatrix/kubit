@@ -1,27 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-            yaml '''
-                apiVersion: v1
-                kind: Pod
-                metadata:
-                spec:
-                containers:
-                    - name: dotnet-sdk8
-                    image: docker.gladeos.net/jenkins/dotnet-sdk:8.0
-                    command:
-                    - sleep
-                    args:
-                    - 99d
-                    tty: true
-                '''            
-            // //cloud 'kubernetes'
-            // containerTemplate {
-            // name 'dotnet-sdk8'
-            // image 'docker.gladeos.net/jenkins/dotnet-sdk:8.0'
-            // command 'sleep'
-            // args '99d'
-            // }
+            yamlFile 'KubernetesPod.yaml'
         }
     }
     
