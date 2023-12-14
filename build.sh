@@ -16,5 +16,5 @@ BUILD_COMMIT=$(git rev-parse --verify HEAD)
 BUILD_SHORTCOMMIT=${BUILD_COMMIT:0:6}
 echo "Commit: $BUILD_COMMIT"
 
-docker build docker -t docker-hosted.gladeos.net/kubit/build:$BUILD_NUMBER
-docker push docker-hosted.gladeos.net/kubit/build:$BUILD_NUMBER
+docker build docker -t docker-hosted.gladeos.net/dotnet-sdk8:$BUILD_NUMBER
+docker push docker-hosted.gladeos.net/dotnet-sdk8:$BUILD_NUMBER
