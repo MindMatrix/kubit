@@ -41,13 +41,13 @@ pipeline {
                 }
             }
         }        
-        stage("build"){
-            steps{
-                container('dotnet-sdk8') {
-                    sh 'docker publish $BUILD_IMAGE:BUILD_TAG'
-                }
-            }
-        }           
+        // stage("docker"){
+        //     steps{
+        //         container('dotnet-sdk8') {
+        //             sh 'docker publish $BUILD_IMAGE:BUILD_TAG'
+        //         }
+        //     }
+        // }           
         // stage("deploy"){
         //     steps {
         //         withKubeCredentials([
