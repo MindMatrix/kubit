@@ -23,11 +23,11 @@ pipeline {
             steps{
                 container('dotnet-sdk8') {
                     sh 'git clean -xfd'
-                    withKubeCredentials([
-                         [credentialsId: 'kubeconfig'],
-                    ]) {
+                    // withKubeCredentials([
+                    //      [credentialsId: 'kubeconfig'],
+                    // ]) {
                     sh 'cd src && dotnet run -- --repo git-amp-ssh.default.svc.cluster.local --branch "$BRANCH" --tag "$VERSION-$SAFEBRANCH" --image "docker-hosted.gladeos.net/amp/taskmanager" --project "Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj"'
-                    }  
+                    //}  
                 }
             }
         }
