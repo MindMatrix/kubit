@@ -6,7 +6,8 @@ pipeline {
     }
     
     environment { 
-        BUILD_IMAGE = "docker-hosted.gladeos.net/amp/taskmanager"       
+        BUILD_HOST = "docker-hosted.gladeos.net"       
+        BUILD_IMAGE = "${$BUILD_HOST}/amp/taskmanager"       
         BUILD_PATH = "/tmp/app"
         BUILD_BRANCH = "${BRANCH_NAME}"
         SAFEBRANCH = "${env.BUILD_BRANCH.find(/[a-zA-Z0-9\-\.]+/)}"
@@ -41,13 +42,22 @@ pipeline {
                 }
             }
         }        
-        // stage("docker"){
-        //     steps{
-        //         container('dotnet-sdk8') {
-        //             sh 'docker publish $BUILD_IMAGE:BUILD_TAG'
-        //         }
-        //     }
-        // }           
+        stage("docker"){
+            steps{
+                container('dotnet-sdk8') {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hosted', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PAT')]) {
+                        try {
+                            sh 'docker login $BUILD_HOST -u $DOCKER_USERNAME -p $DOCKER_PAT'
+                            sh 'docker push $BUILD_IMAGE:$BUILD_TAG'
+                        } catch (Exception e) {
+                            echo "An error occurred: ${e.getMessage()}"
+                        } finally {
+                            sh 'docker logout $BUILD_HOST'
+                        }
+                    }
+                }
+            }
+        }           
         // stage("deploy"){
         //     steps {
         //         withKubeCredentials([
