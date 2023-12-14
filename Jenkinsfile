@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            image 'docker-hosted.gladeos.net/kubit/dotnet-sdk:8.0'
+            image 'docker.gladeos.net/kubit/dotnet-sdk:8.0'
         }
     }    
     environment {        
