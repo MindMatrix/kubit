@@ -1,6 +1,5 @@
 pipeline {
-    agent { dockerfile true }
-    
+    agent any    
     environment {        
         BRANCH = "${BRANCH_NAME}"
         TASK = "${TASK_NAME}"
@@ -17,6 +16,7 @@ pipeline {
             }
         }
         stage("build"){
+            agent { dockerfile true }
             steps{
                 sh 'git clean -xfd'
                 // withKubeCredentials([
