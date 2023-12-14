@@ -7,13 +7,13 @@ pipeline {
     
     environment { 
         BUILD_HOST = "docker-hosted.gladeos.net"       
-        BUILD_IMAGE = "${$BUILD_HOST}/amp/taskmanager"       
+        BUILD_IMAGE = "${BUILD_HOST}/amp/taskmanager"       
         BUILD_PATH = "/tmp/app"
         BUILD_BRANCH = "${BRANCH_NAME}"
         SAFEBRANCH = "${env.BUILD_BRANCH.find(/[a-zA-Z0-9\-\.]+/)}"
         BUILD_NUMBER = "${(new Date()).format("yyyy.MM.dd")}.${BUILD_ID}"
         BUILD_CONFIGURATION = "Debug"
-        BUILD_TAG = "${$BUILD_NUMBER}-${SAFEBRANCH}"
+        BUILD_TAG = "${BUILD_NUMBER}-${SAFEBRANCH}"
     }
     stages {
         stage("setup") {
