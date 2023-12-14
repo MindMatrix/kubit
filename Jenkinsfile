@@ -19,22 +19,22 @@ pipeline {
         stage("build"){
             steps{
                 sh 'git clean -xfd'
-                withKubeCredentials([
-                    [credentialsId: 'kubeconfig'],
-                ]) {
-                    sh 'cd src && dotnet run -- --repo git-amp-ssh.default.svc.cluster.local --branch "$BRANCH" --tag "$VERSION-$SAFEBRANCH" --image "mindmatrix/taskmanager2" --project "Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj"'
-                }  
+                // withKubeCredentials([
+                //     [credentialsId: 'kubeconfig'],
+                // ]) {
+                sh 'cd src && dotnet run -- --repo git-amp-ssh.default.svc.cluster.local --branch "$BRANCH" --tag "$VERSION-$SAFEBRANCH" --image "docker-hosted.gladeos.net/amp/taskmanager" --project "Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj"'
+                //}  
             }
         }
-        stage("deploy"){
-            steps {
-                withKubeCredentials([
-                    [credentialsId: 'kubeconfig'],
-                ]) {
-                    sh 'kubectl set image -n ampdevelop "deployment/task-$TASK" tm=mindmatrix/taskmanager2:$VERSION-$SAFEBRANCH'
-                }                
-            }
-        } 
+        // stage("deploy"){
+        //     steps {
+        //         withKubeCredentials([
+        //             [credentialsId: 'kubeconfig'],
+        //         ]) {
+        //             sh 'kubectl set image -n ampdevelop "deployment/task-$TASK" tm=mindmatrix/taskmanager2:$VERSION-$SAFEBRANCH'
+        //         }                
+        //     }
+        // } 
     }
 }
 
