@@ -7,7 +7,7 @@ pipeline {
                 metadata:
                 spec:
                 containers:
-                - name: dotnet-sdk8
+                    - name: dotnet-sdk8
                     image: docker.gladeos.net/jenkins/dotnet-sdk:8.0
                     command:
                     - sleep
