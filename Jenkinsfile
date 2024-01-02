@@ -31,7 +31,7 @@ pipeline {
                     sh 'cp /tmp/ssh/id_rsa ~/.ssh/id_rsa '
                     sh 'chmod 600 ~/.ssh/id_rsa '
                     sh 'ssh-keyscan git-amp-ssh.jenkins.svc.cluster.local > ~/.ssh/known_hosts'
-                    sh 'git clone --depth 1 --branch main git@git-amp-ssh.jenkins.svc.cluster.local:/tmp/repo /tmp/app'
+                    sh 'git clone --depth 1 --branch $BUILD_BRANCH git@git-amp-ssh.jenkins.svc.cluster.local:/tmp/repo /tmp/app'
                 }
             }
         }
