@@ -1,7 +1,8 @@
 # kubit
 
 ```
-docker build docker -t docker-hosted.gladeos.net/kubit:1.
+./build.sh
+docker push docker build docker -t docker-hosted.gladeos.net/dotnet-sdk8:$(date '+%Y.%m.%d.%H%M')
 ```
 
 1. Requires docker-hub secret to access private repo
