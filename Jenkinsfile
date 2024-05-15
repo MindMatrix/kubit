@@ -6,7 +6,7 @@ pipeline {
     }
     
     environment { 
-        BUILD_HOST = "docker-hosted.gladeos.net"       
+        BUILD_HOST = "harbor.gladeos.dev"       
         BUILD_IMAGE = "${BUILD_HOST}/amp/taskmanager"       
         BUILD_PATH = "/tmp/app"
         BUILD_BRANCH = "${BRANCH_NAME}"
@@ -45,7 +45,7 @@ pipeline {
         stage("docker"){
             steps{
                 container('dotnet-sdk8') {
-                    withCredentials([usernamePassword(credentialsId: 'docker-hosted', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PAT')]) {
+                    withCredentials([usernamePassword(credentialsId: 'harbor-write', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PAT')]) {
                         script{
                             try {
                                 sh 'docker login $BUILD_HOST -u $DOCKER_USERNAME -p $DOCKER_PAT'
