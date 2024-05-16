@@ -6,8 +6,7 @@ pipeline {
     }
     
     environment { 
-        BUILD_HOST = "harbor.gladeos.dev"       
-        BUILD_IMAGE = "${BUILD_HOST}/amp/taskmanager"       
+        BUILD_IMAGE = "mindmatrix/taskmanager2"       
         BUILD_PATH = "/tmp/app"
         BUILD_BRANCH = "${BRANCH_NAME}"
         SAFEBRANCH = "${env.BUILD_BRANCH.find(/[a-zA-Z0-9\-\.]+/)}"
@@ -45,15 +44,15 @@ pipeline {
         stage("docker"){
             steps{
                 container('dotnet-sdk8') {
-                    withCredentials([usernamePassword(credentialsId: 'harbor-write', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PAT')]) {
+                    withCredentials([usernamePassword(credentialsId: 'dockerio', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PAT')]) {
                         script{
                             try {
-                                sh 'docker login $BUILD_HOST -u $DOCKER_USERNAME -p $DOCKER_PAT'
+                                sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PAT'
                                 sh 'docker push $BUILD_IMAGE:$BUILD_TAG'
                             } catch (Exception e) {
                                 echo "An error occurred: ${e.getMessage()}"
                             } finally {
-                                sh 'docker logout $BUILD_HOST'
+                                sh 'docker logout'
                             }
                         }
                     }
