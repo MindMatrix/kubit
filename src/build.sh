@@ -21,6 +21,9 @@ BUILD_COMMIT=$(git rev-parse --verify HEAD)
 BUILD_SHORTCOMMIT=${BUILD_COMMIT:0:6}
 echo "Commit: $BUILD_COMMIT"
 
+dotnet tool restore
+dotnet nuke specification
+
 dotnet publish $CS_PROJ_PATH --os linux --arch x64 -c Debug -p:ContainerImageTag=$BUILD_TAG
 if [ $? -ne 0 ]; then
     echo "Build failed."
