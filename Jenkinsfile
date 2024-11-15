@@ -4,7 +4,9 @@ pipeline {
             yamlFile 'KubernetesPod.yaml'
         }
     }
-    
+    options {
+        ansiColor('xterm')
+    }        
     environment { 
         BUILD_IMAGE = "mindmatrix/taskmanager2"       
         BUILD_PATH = "/tmp/app"
