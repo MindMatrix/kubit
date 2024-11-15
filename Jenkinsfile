@@ -37,6 +37,8 @@ pipeline {
         stage("build"){
             steps{
                 container('dotnet-sdk8') {
+                    sh 'dotnet tool restore'
+                    sh 'dotnet nuke specification'
                     sh 'dotnet publish "$BUILD_PATH/Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj" --os linux --arch x64 -c $BUILD_CONFIGURATION -p:ContainerImageTag=$BUILD_TAG -p:ContainerRepository=$BUILD_IMAGE'
                 }
             }
