@@ -11,13 +11,13 @@ spec:
       args:
         - 99d
       tty: true
-      # resources:
-      #   limits:
-      #     cpu: "8"
-      #     memory: 8Gi
-      #   requests:
-      #     cpu: 500m
-      #     memory: 512Mi
+      resources:
+        limits:
+          cpu: 8000m
+          memory: 8Gi
+        requests:
+          cpu: 500m
+          memory: 512Mi
       volumeMounts:
         - mountPath: /mnt/data/packages
           name: dotnet-build-packages
@@ -27,16 +27,16 @@ spec:
           mountPath: "/tmp/ssh"
           readOnly: true
       env:
-        # - name: DOCKER_USERNAME
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: dockerhub-credentials
-        #       key: DOCKER_USERNAME
-        # - name: DOCKER_PAT
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: dockerhub-credentials
-        #       key: DOCKER_PAT
+        - name: DOCKER_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: dockerhub-credentials
+              key: DOCKER_USERNAME
+        - name: DOCKER_PAT
+          valueFrom:
+            secretKeyRef:
+              name: dockerhub-credentials
+              key: DOCKER_PAT
         - name: NUGET_PACKAGES
           value: "/mnt/data/packages"
         - name: DOCKER_HOST
@@ -46,7 +46,7 @@ spec:
       args:
         - dockerd
         #- --registry-mirror=https://docker.gladeos.net
-        - --registry-mirror=http://nexus-docker.nexus.svc.cluster.local:9901
+        #- --registry-mirror=http://nexus-docker.nexus.svc.cluster.local:9901
       securityContext:
         privileged: true
       volumeMounts:
@@ -55,13 +55,13 @@ spec:
       env:
         - name: DOCKER_DRIVER
           value: overlay2
-      # resources:
-      #   limits:
-      #     cpu: "2"
-      #     memory: 1Gi
-      #   requests:
-      #     cpu: 500m
-      #     memory: 256Mi
+      resources:
+        limits:
+          cpu: "2"
+          memory: 2Gi
+        requests:
+          cpu: 500m
+          memory: 256Mi
   volumes:
     - name: dotnet-build-packages
       persistentVolumeClaim:
