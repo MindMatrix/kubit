@@ -13,6 +13,10 @@ spec:
         - name: docker-hub
       restartPolicy: Never
       shareProcessNamespace: true
+      volumes:
+        - name: kaniko-config
+          secret:
+            secretName: kaniko-docker-config
       containers:
         - name: build
           image: docker.gladeos.net/kubit/build:2023.12.13.2215
@@ -34,7 +38,11 @@ spec:
             - name: ssh-keys-volume
               mountPath: "/tmp/ssh"
               readOnly: true
+            - name: kaniko-config
+              mountPath: /tmp/.docker/config.json
           env:
+            - name: DOCKER_CONFIG
+              value: /tmp/.docker
             - name: DOCKER_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -71,5 +79,5 @@ spec:
         - name: ssh-keys-volume
           secret:
             secretName: git-client-keys
-# kubectl create secret generic dockerhub-credentials --from-literal=DOCKER_USERNAME=docker-write --from-literal=DOCKER_PAT=
+# kubectl create secret generic dockerhub --from-literal=DOCKER_USERNAME= --from-literal=DOCKER_PAT=
 #dotnet run -- --repo git-server-service.jenkins.svc.cluster.local --branch main --image "docker-hosted.gladeos.net/amp/taskmanager" --project "Applications/MindMatrix.Applications.TaskManager2/src//MindMatrix.Applications.TaskManager.csproj"
