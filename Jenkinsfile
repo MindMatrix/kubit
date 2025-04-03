@@ -39,9 +39,11 @@ pipeline {
         stage("build"){
             steps{
                 container('dotnet-sdk8') {
-                    sh 'dotnet tool restore --tool-manifest "$BUILD_PATH/.config/dotnet-tools.json"'
-                    sh '(cd "$BUILD_PATH" && dotnet nuke specification --root "$BUILD_PATH")'
-                    sh 'dotnet publish "$BUILD_PATH/Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj" --os linux --arch x64 -c $BUILD_CONFIGURATION -p:ContainerImageTag=$BUILD_TAG -p:ContainerRepository=$BUILD_IMAGE'
+                    withCredentials([usernamePassword(credentialsId: 'dockerio', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PAT')]) {
+                        sh 'dotnet tool restore --tool-manifest "$BUILD_PATH/.config/dotnet-tools.json"'
+                        sh '(cd "$BUILD_PATH" && dotnet nuke specification --root "$BUILD_PATH")'
+                        sh 'dotnet publish "$BUILD_PATH/Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj" --os linux --arch x64 -c $BUILD_CONFIGURATION -p:ContainerImageTag=$BUILD_TAG -p:ContainerRepository=$BUILD_IMAGE'
+                    }
                 }
             }
         }        
