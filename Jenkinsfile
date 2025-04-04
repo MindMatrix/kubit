@@ -39,10 +39,12 @@ pipeline {
         stage("build"){
             steps{
                 container('dotnet-sdk8') {
-                    withCredentials([usernamePassword(credentialsId: 'dockerio', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PAT')]) {
+                    withCredentials([usernamePassword(credentialsId: 'dockerio', usernameVariable: 'SDK_CONTAINER_REGISTRY_UNAME', passwordVariable: 'SDK_CONTAINER_REGISTRY_PWORD')]) {
                         sh 'dotnet tool restore --tool-manifest "$BUILD_PATH/.config/dotnet-tools.json"'
                         sh '(cd "$BUILD_PATH" && dotnet nuke specification --root "$BUILD_PATH")'
-                        sh 'dotnet publish "$BUILD_PATH/Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj" --os linux --arch x64 -c $BUILD_CONFIGURATION -p:ContainerImageTag=$BUILD_TAG -p:ContainerRepository=$BUILD_IMAGE'
+                        sh 'dotnet publish "$BUILD_PATH/Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj" --os linux --arch x64 -c Release -p:ContainerImageTag=1.1.1.1 -p:ContainerRepository=mindmatrix/taskmanager2'
+                        //sh 'dotnet build "/tmp/app/Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj" --os linux --arch x64 -c Release'
+                        //sh 'dotnet publish "/tmp/app/Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj" --os linux --arch x64 -c Release --no-build -p:ContainerImageTag=1.1.1.1 -p:ContainerRepository=mindmatrix/taskmanager2'
                     }
                 }
             }
