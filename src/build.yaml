@@ -17,6 +17,9 @@ spec:
         - name: kaniko-config
           secret:
             secretName: kaniko-docker-config
+        - name: jwt-pfx
+          secret:
+            secretName: jwt-pfx
       containers:
         - name: build
           image: docker.gladeos.net/kubit/build:2023.12.13.2215
@@ -40,6 +43,10 @@ spec:
               readOnly: true
             - name: kaniko-config
               mountPath: /tmp/.docker/config.json
+            - name: jwt-pfx
+              mountPath: /app/Installs/jwt.pfx
+              subPath: jwt.pfx
+              readOnly: true
           env:
             - name: DOCKER_CONFIG
               value: /tmp/.docker
