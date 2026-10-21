@@ -27,7 +27,8 @@ pipeline {
         }
         stage("clone"){
             steps{
-                container('dotnet-sdk8') {
+                container('dotnet-sdk') {
+                    sh 'apt-get update -qq && apt-get install -y -qq --no-install-recommends openssh-client'
                     sh 'mkdir -p ~/.ssh'
                     sh 'cp /tmp/ssh/id_rsa ~/.ssh/id_rsa '
                     sh 'chmod 600 ~/.ssh/id_rsa '
@@ -38,35 +39,18 @@ pipeline {
         }
         stage("build"){
             steps{
-                container('dotnet-sdk8') {
-                    withCredentials([usernamePassword(credentialsId: 'dockerio', usernameVariable: 'SDK_CONTAINER_REGISTRY_UNAME', passwordVariable: 'SDK_CONTAINER_REGISTRY_PWORD')]) {
+                container('dotnet-sdk') {
+                    // Publish pushes the image straight to Docker Hub with these credentials; no Docker daemon is needed.
+                    withCredentials([usernamePassword(credentialsId: 'dockerio', usernameVariable: 'DOTNET_CONTAINER_REGISTRY_UNAME', passwordVariable: 'DOTNET_CONTAINER_REGISTRY_PWORD')]) {
                         sh 'dotnet tool restore --tool-manifest "$BUILD_PATH/.config/dotnet-tools.json"'
                         sh '(cd "$BUILD_PATH" && dotnet nuke specification --root "$BUILD_PATH")'
-                        sh 'dotnet publish "$BUILD_PATH/Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj" --os linux --arch x64 -c Release -p:ContainerImageTag=$BUILD_TAG -p:ContainerRepository=$BUILD_IMAGE'
+                        sh 'dotnet publish "$BUILD_PATH/Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj" --os linux --arch x64 -c Release -p:ContainerRegistry=docker.io -p:ContainerImageTag=$BUILD_TAG -p:ContainerRepository=$BUILD_IMAGE'
                         //sh 'dotnet build "/tmp/app/Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj" --os linux --arch x64 -c Release'
                         //sh 'dotnet publish "/tmp/app/Applications/MindMatrix.Applications.TaskManager2/src/MindMatrix.Applications.TaskManager.csproj" --os linux --arch x64 -c Release --no-build -p:ContainerImageTag=1.1.1.1 -p:ContainerRepository=mindmatrix/taskmanager2'
                     }
                 }
             }
         }        
-        stage("docker"){
-            steps{
-                container('dotnet-sdk8') {
-                    withCredentials([usernamePassword(credentialsId: 'dockerio', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PAT')]) {
-                        script{
-                            try {
-                                sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PAT'
-                                sh 'docker push $BUILD_IMAGE:$BUILD_TAG'
-                            } catch (Exception e) {
-                                echo "An error occurred: ${e.getMessage()}"
-                            } finally {
-                                sh 'docker logout'
-                            }
-                        }
-                    }
-                }
-            }
-        }           
         // stage("deploy"){
         //     steps {
         //         withKubeCredentials([
