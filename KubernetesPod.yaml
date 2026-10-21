@@ -4,8 +4,8 @@ metadata:
   name: jb
 spec:
   containers:
-    - name: dotnet-sdk8
-      image: docker.gladeos.net/dotnet-sdk8:2023.12.14.1216
+    - name: dotnet-sdk
+      image: mcr.microsoft.com/dotnet/sdk:10.0
       command:
         - sleep
       args:
@@ -21,53 +21,16 @@ spec:
       volumeMounts:
         - mountPath: /mnt/data/packages
           name: dotnet-build-packages
-        - mountPath: /var/run
-          name: docker-socket-volume
         - name: ssh-keys-volume
           mountPath: "/tmp/ssh"
           readOnly: true
       env:
-        - name: DOCKER_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: dockerhub-credentials
-              key: DOCKER_USERNAME
-        - name: DOCKER_PAT
-          valueFrom:
-            secretKeyRef:
-              name: dockerhub-credentials
-              key: DOCKER_PAT
         - name: NUGET_PACKAGES
           value: "/mnt/data/packages"
-        - name: DOCKER_HOST
-          value: unix:///var/run/user/1000/docker.sock
-    - name: docker
-      image: docker:dind-rootless
-      args:
-        - dockerd
-        #- --registry-mirror=https://docker.gladeos.net
-        #- --registry-mirror=http://nexus-docker.nexus.svc.cluster.local:9901
-      securityContext:
-        privileged: true
-      volumeMounts:
-        - mountPath: /var/run
-          name: docker-socket-volume
-      env:
-        - name: DOCKER_DRIVER
-          value: overlay2
-      resources:
-        limits:
-          cpu: "2"
-          memory: 2Gi
-        requests:
-          cpu: 500m
-          memory: 256Mi
   volumes:
     - name: dotnet-build-packages
       persistentVolumeClaim:
         claimName: dotnet-build-packages
-    - name: docker-socket-volume
-      emptyDir: {}
     - name: ssh-keys-volume
       secret:
         secretName: git-client-keys
